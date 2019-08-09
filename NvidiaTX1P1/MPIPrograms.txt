@@ -1,0 +1,359 @@
+MPI PROGRAMS
+
+// Algunos programas basicos de MPI
+
+#########################################################################################################
+
+## MPI HELLO WORLD ##
+
+Objetivo: "Hola mundo" indicando desde que nodo se menciona.
+
+#include <mpi.h>
+#include <stdio.h>
+
+int main(int argc, char** argv) 
+{
+    // Initialize the MPI environment
+    MPI_Init(NULL, NULL);
+
+    // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // Get the rank of the process
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    // Get the name of the processor
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
+    int name_len;
+    MPI_Get_processor_name(processor_name, &name_len);
+
+    // Print off a hello world message
+    printf("Hello world from processor %s, rank %d out of %d processors\n",
+           processor_name, world_rank, world_size);
+
+    // Finalize the MPI environment.
+    MPI_Finalize();
+}
+
+# Compilar: mpicc <archivo>.c -o <archivo>
+# Ejecutar: mpirun -np <#procesos> [-hosts <nodo1,nodo2,....>] ./<archivo> 
+
+#########################################################################################################
+
+## PING PONG PROGRAM ##
+
+Objetivo: Enviar un dato entre 2 nodos, de A a B y luego de B a A (Si, como ping pong, digo, tenis de mesa).
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char** argv) 
+{
+  const int PING_PONG_LIMIT = 10;
+
+  // Inicializa el ambiente MPI
+  MPI_Init(NULL, NULL);
+
+  // Obtiene el rank y cantidad de procesos
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+  int world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+  // Solo se pueden maximo 2 procesos en este programa
+  if (world_size != 2) 
+  {
+    fprintf(stderr, "La cantidad de nodos deben ser solo 2 para %s\n", argv[0]);
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+
+  int ping_pong_count = 0;
+  int partner_rank = (world_rank + 1) % 2;
+
+  while (ping_pong_count < PING_PONG_LIMIT) 
+  {
+    
+    if (world_rank == ping_pong_count % 2) 
+    {
+      // Incrementa el contador y luego lo envia.
+      ping_pong_count++;
+
+      MPI_Send(&ping_pong_count, 1, MPI_INT, partner_rank, 0, MPI_COMM_WORLD);
+
+      printf("Nodo %d envio un ping_pong_count incrementado a %d al Nodo %d\n",
+             world_rank, ping_pong_count, partner_rank);
+    } 
+    else 
+    {
+      MPI_Recv(&ping_pong_count, 1, MPI_INT, partner_rank, 0, MPI_COMM_WORLD,
+               MPI_STATUS_IGNORE);
+
+      printf("Nodo %d recibio un ping_pong_count de %d desde el Nodo %d\n",
+             world_rank, ping_pong_count, partner_rank);
+    }
+
+  }
+
+  MPI_Finalize();
+
+}
+
+########################################################################################################
+
+## RING PROGRAM ##
+
+Objetivo: Como ping pong pero con multiples Nodos.
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char** argv) 
+{
+  // Inicializa ambiente MPI
+  MPI_Init(NULL, NULL);
+
+  // Obtiene rank y cantd. de procesos
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+  int world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+  int token;
+
+  // Recibe del proceso anterior (n-1) y envia al prox. proceso (n+1), teniendo en cuenta el caso especial
+  // del 1er proceso que si bien recibe del ultimo (0 recibe del n-1) esto debe hacerse al final o sino
+  // crea un deadlock (todos esperando que al anterior les mande algo).
+  if (world_rank != 0) 
+  {
+    MPI_Recv(&token, 1, MPI_INT, world_rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    printf("Proceso %d recibio el Token %d del proceso %d\n", world_rank, token, world_rank - 1);
+  } 
+  
+  else 
+  {
+    // Pone el valor del Token. Este ejemplo es con -1, pero puede agregar lo que quiera y luego
+    // especificarlos en el DATA_TYPE.
+    token = -1;
+  }
+  
+  MPI_Send(&token, 1, MPI_INT, (world_rank + 1) % world_size, 0, MPI_COMM_WORLD);
+
+  // Despues de hacer todo, ahora si el proceso 0 obtiene el dato del proceso n-1, de lo contrario
+  // habria deadlock (si, todos esperando que el anterior proceso les mande algo).
+  if (world_rank == 0) 
+  {
+    MPI_Recv(&token, 1, MPI_INT, world_size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    printf("Proceso %d recibio el Token %d del proceso %d\n", world_rank, token, world_size - 1);
+  }
+
+  MPI_Finalize();
+
+}
+
+#########################################################################################################
+
+## PROBE PROGRAM ##
+
+Objetivo: Nodo1 envia datos pero un numero aleatorio, Nodo2 lo recibe y obtiene esa informacion a traves de "MPI_Probe" y "MPI_Get_count".
+
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+int main(int argc, char** argv) 
+{
+  MPI_Init(NULL, NULL);
+
+  int world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+  if (world_size != 2) 
+  {
+    fprintf(stderr, "Tiene que ser solo 2\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+  int number_amount;
+
+  if (world_rank == 0) 
+  {
+    const int MAX_NUMBERS = 100;
+    int numbers[MAX_NUMBERS];
+  
+    // Coge un numero random de enteros para enviar al Nodo2
+    srand(time(NULL));
+    number_amount = (rand() / (float)RAND_MAX) * MAX_NUMBERS;
+  
+    // Envia los enteros al Nodo2
+    MPI_Send(numbers, number_amount, MPI_INT, 1, 0, MPI_COMM_WORLD);
+    printf("0 envia %d numeros a 1\n", number_amount);
+  } 
+
+  else 
+	
+    if (world_rank == 1) 
+    {
+      MPI_Status status;
+
+      // Usar Probe por el mensaje que viene del Nodo1
+      MPI_Probe(0, 0, MPI_COMM_WORLD, &status);
+
+      // Cuando Probe retorna, "status" ya tiene tamano y otros atributos del mensaje. Obtenga el tamano
+      // del mensaje.
+      MPI_Get_count(&status, MPI_INT, &number_amount);
+
+      // Allocate a buffer just big enough to hold the incoming numbers
+      int* number_buf = (int*)malloc(sizeof(int) * number_amount);
+
+      // Now receive the message with the allocated buffer
+      MPI_Recv(number_buf, number_amount, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+      printf("1 dynamically received %d numbers from 0.\n", number_amount);
+
+      free(number_buf);
+    }
+
+  MPI_Finalize();
+
+}
+
+
+  // Gather all partial averages down to the root process
+  float *sub_avgs = NULL;
+  if (world_rank == 0) {
+sub_avgs = (float *)malloc(sizeof(float) * world_size);
+#########################################################################################################
+
+## AVERAGE PROGRAM ##
+
+Objetivo: Computar el promedio dado por valores aleatorios en cada proceso y unirlos a 1 solo proceso.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <mpi.h>
+#include <assert.h>
+
+// Creates an array of random numbers. Each number has a value from 0 - 1
+float *create_rand_nums(int num_elements) 
+{
+  float *rand_nums = (float *)malloc(sizeof(float) * num_elements);
+  assert(rand_nums != NULL);
+  int i;
+
+  for (i = 0; i < num_elements; i++) 
+  {
+    rand_nums[i] = (rand() / (float)RAND_MAX);
+  }
+
+  return rand_nums;
+}
+
+// Computes the average of an array of numbers
+float compute_avg(float *array, int num_elements) 
+{
+  float sum = 0.f;
+  int i;
+
+  for (i = 0; i < num_elements; i++) 
+  {
+    sum += array[i];
+  }
+
+  return sum / num_elements;
+}
+
+int main(int argc, char** argv) 
+{
+  if (argc != 2) 
+  {
+    fprintf(stderr, "Usage: avg num_elements_per_proc\n");
+    exit(1);
+  }
+
+  int num_elements_per_proc = atoi(argv[1]);
+
+  // Seed the random number generator to get different results each time
+  srand(time(NULL));
+
+  MPI_Init(NULL, NULL);
+
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  int world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+  // Create a random array of elements on the root process. Its total
+  // size will be the number of elements per process times the number
+  // of processes
+  float *rand_nums = NULL;
+
+  if (world_rank == 0) 
+  {
+    rand_nums = create_rand_nums(num_elements_per_proc * world_size);
+  }
+
+  // For each process, create a buffer that will hold a subset of the entire
+  // array
+  float *sub_rand_nums = (float *)malloc(sizeof(float) * num_elements_per_proc);
+  assert(sub_rand_nums != NULL);
+
+  // Scatter the random numbers from the root process to all processes in
+  // the MPI world
+  MPI_Scatter(rand_nums, num_elements_per_proc, MPI_FLOAT, sub_rand_nums,
+              num_elements_per_proc, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+  // Compute the average of your subset
+  float sub_avg = compute_avg(sub_rand_nums, num_elements_per_proc);
+
+  // Gather all partial averages down to the root process
+  float *sub_avgs = NULL;
+
+  if (world_rank == 0) 
+  {
+    sub_avgs = (float *)malloc(sizeof(float) * world_size);
+    assert(sub_avgs != NULL);
+  }
+
+  MPI_Gather(&sub_avg, 1, MPI_FLOAT, sub_avgs, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+  // Now that we have all of the partial averages on the root, compute the
+  // total average of all numbers. Since we are assuming each process computed
+  // an average across an equal amount of elements, this computation will
+  // produce the correct answer.
+  if (world_rank == 0) 
+  {
+    float avg = compute_avg(sub_avgs, world_size);
+    printf("Avg of all elements is %f\n", avg);
+
+    // Compute the average across the original data for comparison
+    float original_data_avg = compute_avg(rand_nums, num_elements_per_proc * world_size);
+    printf("Avg computed across original data is %f\n", original_data_avg);
+  }
+
+  // Clean up
+  if (world_rank == 0) 
+  {
+    free(rand_nums);
+    free(sub_avgs);
+  }
+
+  free(sub_rand_nums);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Finalize();
+
+}

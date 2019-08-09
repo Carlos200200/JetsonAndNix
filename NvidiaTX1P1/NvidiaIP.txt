@@ -1,0 +1,10 @@
+# NVIDIA TX1 Nodes
+
+10.42.0.86      Tegra1
+10.42.0.62      Tegra2
+10.42.0.228     Tegra3
+10.42.0.219     Tegra4
+10.42.0.96      Tegra5
+10.42.0.115     Tegra6
+10.42.0.108     Tegra7
+10.42.0.78      Tegra8

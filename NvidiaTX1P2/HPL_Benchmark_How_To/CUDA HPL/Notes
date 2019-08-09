@@ -1,0 +1,107 @@
+NOTES
+
+This file is about some notes in the use of Cuda HPL Benchmark on Jetson TX1.
+
+
+# Methodology
+
+Normally we test on single Node and then multiples nodes. This wasn't an exception, so we test the program until it works and then move to multiple nodes.
+
+In the process we encounter some problems regarding the system configuration and versions of the libraries.
+
+
+# Notes: Problems
+
+1. Libraries used: Only Cuda Aware
+
+	Cuda HPL Benchmark need a BLAS library and a MPI library. We use the following libraries, download on /Documents path but configured on /usr/local/<program> path:
+
+	MPI  => OpenMpi 3.1.0 (latest in this date)	   => /usr/local/openmpi
+	BLAS => OpenBlas 0.2.19 (see below for more info)  => /usr/local/openblas
+
+2. Incompatibility on OpenBlas 0.2.20
+
+   OpenBlas has a library called "libopenblas_cortexa57p-r0.2.20.a" on /lib in their folder. This doesn't work using the Cuda HPL provide by Cuda, so we use the one that Azimi provide on their git hub "clusterSocBench/HPL".
+
+   This implementation, when you make all, they ask you the "libopenblas_cortexa57p-r0.2.19.a" (OpenBlas 0.2.19) instead of the 0.2.20 version, so at the end we have to install that version.
+
+   Please note that we also modify the Cuda implementation (see below) wit 0.2.20 and also it didnt work, and in the asimi one, it doesnt matter if you specify in the makefile this line:
+	
+	LAlib = -L$(TOPdir)/src/cuda -ldgemm -L/usr/local/cuda/lib64 -lcuda -lcudart -lcublas 		-L$(LAdir)/lib/libopenblas.a $(LAdir)/lib/libopenblas_cortexa57p-r0.2.20.a
+
+   On runtime the program always is gonna to look for 0.2.19 implementation.
+
+3. Modifying version of Cuda HPL
+
+   This is a critical part of the implementation and struggling me too much. Cuda HPL Benchmark is not an implementation for the Tegras but for the Nvidia GPU. That means that you have to change part of the code (the .c files) in order to make it work on the Tegra's.
+
+   But, what we have to change?. The answer is the "cudaHostRegister()" function. As it tell on https://devtalk.nvidia.com/default/topic/998962/jetson-tx1/cuda-zero-copy-on-tx1/, literally, the Nvidia moderator said: "cudaHostRegister() is not supported on ARM platforms.
+This is because the caching attribute of an existing allocation can't be changed on the fly. If required, please use cudaHostAlloc() with the flag cudaHostAllocMapped to allocate device-mapped host-accessible memory". This mean simply change that function by the other one.
+
+	cudaHostRegister() => cudaHostAlloc()
+
+   The only difference is that i didn't see the "cudaHostAllocMapped" flag, instead i saw a "0" in that part of the attribute (but it works, nevertheless i'll test with that flag thinking if maybe help with the ram memory fail -again, see below-).
+
+4. Everything OK except...the link to libraries?
+
+   Another problem when you run "mpirun .... ./run_linpack" is that doesn't find another library, one that i specified on the Make.CUDA before the Make, something called "libdgemm.so.1". You can check it running ldd and the xhpl script:
+
+	$ ldd xhpl
+		...
+		libdgemm.so.1 => not found
+		...
+		...
+
+    There are some solutions of this problem, but i use the last one:
+
+    4.1 Add rpath on Make.Cuda
+
+	Put rpath on CCFLAGS on the Make.CUDA file.
+		CCFLAGS = $(HPL_DEFS) -fomit-frame-pointer -O3 -funroll-loops -W -Wall -fopenmp -Wl,-rpath,$(TOPdir)/src/cuda
+
+    4.2 Use LD_PRELOAD
+
+	LD_PRELOAD only load temporary the libraries on the path in order to help the 		programm to find the libraries. When you want to execute just type:
+
+	$ LD_PRELOAD=$HOME/cloud/CUDAHPLBenchmark/hpl-2.0_FERMI_v15/src/cuda/libdgemm.so.1 		mpirun -np 1 ./run_linpack
+
+	After the LD_PRELOAD you can put anything on the command line. If you want to clear 		this preload, just type "export LD_PRELOAD=" on the command line.
+
+	More info of preload is found here: https://rafalcieslak.wordpress.com/2013/04/02/dynamic-linker-tricks-using-ld_preload-to-cheat-inject-features-and-investigate-programs/
+
+    4.3 Easiest way: Export the PATH
+	
+	Putting this on the ~/.bashrc to make it permanent:
+
+		export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/cloud/CUDAHPLBenchmark/hpl-2.0_FERMI_v15/src/cuda/"
+
+	Don't forget to "source ~/.bashrc" to update this information on the bash.
+
+    After all of this solutions, then i would have another problem with the bash on mpirun on multiple nodes (see below).
+
+
+5. RAM Memory...full?
+
+   The idea of this benchmark is to put full the RAM and make operations with this. Well, the problem is on tegras when the RAM is full, they only kill the process and doesn't say     anything. By forgeting this, i spend a lot of time looking why the kernel kill this process until i can check htop and see in a second a big chunk of memory that overextend the RAM memory.
+
+   Why i forgot that? Because in the early test i use less data than i used in the CPU-Only Mode, so i think it didn't have to put full the RAM, but i was mistaken, because like the program copy all the GPU memory to have operations (and the Zero-Copy?, don't know, thats why i looking for the cudaHostAlloc() for that).
+
+
+6. MPI on multiple runs failing libraries linking.
+
+   And at the end, after making work in a single Node (CPU-GPU), i use multiple nodes and something called "ORTE" says that didn't find the libraries.
+
+   In this part is because on a "non-login shell", they execute ~/.bashrc but i don't know why, but the exports didn't work, so i have to put that exports at the begining and now all work smoothly.
+
+
+################EXTRAS###########
+
+Because have to test, i need to change so flags on cudaAllocHost:
+
+src/panel/HPL_pdpanel_init.c:257:     
+src/panel/HPL_pdpanel_init.c:315:     
+src/panel/HPL_pdpanel_init.c:423:
+testing/ptest/HPL_pdtest.c:200:
+
+Like it doent happen anything.
+

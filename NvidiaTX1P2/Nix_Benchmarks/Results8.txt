@@ -1,0 +1,44 @@
+echo " ">> Results8-10000.txt
+echo "RESULTADOS 4-2">> Results8-10000.txt
+echo " ">> Results8-10000.txt
+
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 4 2 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 4 2 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 4 2 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 4 2 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 4 2 -d 10000 >> Results8-10000.txt
+
+echo " ">> Results8-10000.txt
+echo "RESULTADOS 2-4">> Results8-10000.txt
+echo " ">> Results8-10000.txt
+
+
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 2 4 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 2 4 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 2 4 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 2 4 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 2 4 -d 10000 >> Results8-10000.txt
+
+
+echo " ">> Results8-10000.txt
+echo "RESULTADOS 8-1">> Results8-10000.txt
+echo " " >> Results8-10000.txt
+
+
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 8 1 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 8 1 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 8 1 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 8 1 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 8 1 -d 10000 >> Results8-10000.txt
+
+
+echo " ">> Results8-10000.txt
+echo "RESULTADOS 1-8" >> Results8-10000.txt
+echo " ">> Results8-10000.txt
+
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 1 8 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 1 8 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 1 8 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 1 8 -d 10000 >> Results8-10000.txt
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 8 -hosts Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 1 8 -d 10000 >> Results8-10000.txt
+

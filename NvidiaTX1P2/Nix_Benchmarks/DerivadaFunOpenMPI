@@ -1,0 +1,64 @@
+## 1ra derivada dfuncional OPENMPI
+# /nix/store/wij087nnrvh2d6a5r0wzk7svz820vb53-OpenMPI-3.2.1
+
+{ stdenv, fetchurl, gfortran }:
+
+
+stdenv.mkDerivation rec 
+{
+ 
+  name = "OpenMPI-${version}";
+  version= "3.2.1";
+  
+  src = fetchurl 
+  {
+    url = "www.mpich.org/static/downloads/${version}/mpich-${version}.tar.gz";
+    sha256 = "5db53bf2edfaa2238eb6a0a5bc3d2c2ccbfbb1badd79b664a1a919d2ce2330f1";
+  };
+
+  phases = [ "unpackPhase" "configurePhase" "buildPhase" "installPhase" ];
+
+  ###############################################################################
+  ## UNPACK PHASE:
+  ## Untar o unzip los archivos y luego se mueve a la carpeta donde lo desempaco
+  ################################################################################
+
+  ############################################################################### 
+  ## CONFIGURE PHASE:
+  ## Realiza la operacion ./configure si existe el archivo con los FLAGS que le
+  ## pongan, dependiendo de las variables en NIX
+  ################################################################################
+
+  configurePhase = ''
+   	echo "SRC: "$src
+	echo "OUT: "$out
+        
+	source $stdenv/setup   
+   	#mkdir install
+   	./configure --prefix=$out/ --disable-fortran
+   '';
+
+   #  configureFlags = [ "--prefix=${src}/install" "--disable-fortran" ];
+
+  ################################################################################ 
+  ## BUILD PHASE:
+  ## Ejecuta make buscando el Makefile de la carpeta (o se especifica)
+  ################################################################################
+
+#  buildPhase = ''
+#   make
+#  '';
+
+  # Se supone que $out no exite sino desde aqui en installPhase
+
+  ################################################################################ 
+  ## INSTALL PHASE:
+  ## Crea el directorio $out y realiza el make install
+  ################################################################################
+
+#  installPhase = ''
+#   make install
+#  '';
+
+}
+

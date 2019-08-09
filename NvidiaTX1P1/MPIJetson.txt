@@ -1,0 +1,93 @@
+MPI for Jetson TX1 Cluster
+
+1. Download the source and untar
+
+	wget www.mpich.org/static/downloads/3.2.1/mpich-3.2.1.tar.gz
+	tar -xzf mpich-3.2.1.tar.gz
+	cd mpich-3.2.1/
+
+2. Execute the configure part (this comman is to disable fortran)
+
+	./configure --disable-fortran
+
+3. Do make and make install
+
+	make; sudo make install
+
+4. Check if the build was succesfull
+
+	mpiexec --version
+
+############################################################################
+
+Setting Cluster Connections Passwordless Through LAN
+
+We are going to set the passwordless conection between 2 Nodes, Tegra 1 and Tegra 2. The examples tell how to connect from TEGRA1 to TEGRA2 without password.
+
+All the operations is on TEGRA 1.
+
+1. Create a KeyGen a send to the node that you want to register passwordless
+	
+	ssh-keygen
+
+2. Send the PUBLIC KEY to the Destination Host (our example is send the public key of Tegra1 to the Tegra2 Host)
+
+	ssh-copy-id -i ~/.ssh/<public key> <user>@<destination host>
+	ssh-copy-id -i ~/.ssh/Tegra1Key.pub nvidia@Tegra2
+
+3. Activate the ssh agent, we need eval because have to execute the output that you see if you put normally on ssh-agent.
+
+	eval "$(ssh-agent)"
+
+4. Finally you can add the PRIVATE KEY to your agent.
+
+	ssh-add <private key>
+	ssh-add Tegra1Key
+
+If you see "Identity added: Tegra1Key (Tegra1Key)" everything is good and you can check access to the Node.
+
+
+# Troubleshooting:
+
+There was some difficulties regarding this process, if something happen, maybe this could help:
+
+1. ssh-keygen -t dsa
+
+	There are others types to execute keygen, DSA, RSA and with width. 		The important thing is the NAME you put and that it store in:
+	
+		~/.ssh/<key>
+
+2. ssh-copy-id and checking if is correct
+
+	Once you copy the KEY on the other node, you can check if it is ok, 		that is, checking if in AUTHORIZED_KEYS on ~/.ssh/ is the same 		PUBLIC KEY of your machine (<key>.pub on ~/.ssh).
+
+			Node 2				Node 1
+	(contents of) ~/.ssh/authorized_keys = ~/.ssh/<key>.pub
+
+	And becareful, you have to see at the end of the public key the 	user of your machine, in our case "nvidia@Tegra1" NOT "root@Tegra1".
+
+	# In PUBLIC KEY
+	ssh-rsa AAAA......Wzd nvidia@Tegra2  # Correct
+	ssh-rsa AAAA......Wzd root@Tegra2    # Incorrect
+
+3. What happen again with eval?
+
+	If you type ssh-agent you see something like this:
+	
+	# ssh-agent
+	SSH_AUTH_SOCK=/tmp/ssh-Weo19xnzgVwj/agent.2222; 
+	export SSH_AUTH_SOCK;
+	SSH_AGENT_PID=2223; export SSH_AGENT_PID;
+	echo Agent pid 2223;
+
+	But ALL OF THIS has to be EXECUTE, that's why you put "eval".
+
+4. How i know if the agent is running?
+	
+	ps aux | grep ssh
+
+Information:
+
+	https://www.youtube.com/watch?v=vpk_1gldOAE
+	https://www.ssh.com/ssh/copy-id
+	http://mpitutorial.com/tutorials/running-an-mpi-cluster-within-a-lan/

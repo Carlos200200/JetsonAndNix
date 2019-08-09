@@ -1,0 +1,286 @@
+CUDA BASICS
+
+// The following text is in spanish and tell only the basics of NVIDIA CUDA
+
+Taken from: https://devblogs.nvidia.com/even-easier-introduction-cuda/
+
+
+INTRODUCCION A CUDA: EJEMPLO BASICO
+
+Se inicia con un ejemplo de suma de 2 arrays, simple, de tipo float para luego hacer este programa con las GPU.
+
+########################################################################
+
+## ADD SIMPLE ##
+
+Objetivo: Suma 2 arrays Y= X+Y siendo X y Y listas de 1 millon de elementos.
+
+#include <iostream>
+#include <math.h>
+
+// function to add the elements of two arrays
+void add(int n, float *x, float *y)
+{
+  for (int i = 0; i < n; i++)
+      y[i] = x[i] + y[i];
+}
+
+int main(void)
+{
+  int N = 1<<20; // 1M elements
+
+  float *x = new float[N];
+  float *y = new float[N];
+
+  // initialize x and y arrays on the host
+  for (int i = 0; i < N; i++) 
+  {
+    x[i] = 1.0f;
+    y[i] = 2.0f;
+  }
+
+  // Run kernel on 1M elements on the CPU
+  add(N, x, y);
+
+  // Check for errors (all values should be 3.0f)
+  float maxError = 0.0f;
+  for (int i = 0; i < N; i++)
+    maxError = fmax(maxError, fabs(y[i]-3.0f));
+
+  std::cout << "Max error: " << maxError << std::endl;
+
+  // Free memory
+  delete [] x;
+  delete [] y;
+
+  return 0;
+
+}
+
+########################################################################
+
+Aqui, nada extraño. Inicializa y pobla 2 listas y luego las suman. Al final no se le olvide liberar esa memoria (digo, son 1 Millon de elementos).
+
+Ahora viene lo interesante, para que la funcion add se pueda ejecutar en GPU, se debe agregar "__global__" antes de la funcion. A este tipo de funciones, que el GPU puede correr, se le llama "Kernel" en CUDA.
+
+	// CUDA Kernal, la misma vaina pero con global	
+	__global__
+	void add(int n, float *x, float *y)
+	{
+  	  for (int i = 0; i < n; i++)
+      	  y[i] = x[i] + y[i];
+	}
+
+MEMORY ALLOCATION ON CUDA
+
+Gracias a algo llamado "Unified Memory" permite que la memoria del GPU se pueda acceder como si estuviera en el CPU (mismo espacio de memoria), se puede referenciar esta lista transparentemente.
+	
+	// Cambios de c++ normal a referencia con UNIFIED MEMORY
+	new float []  ----------> cudaMallocManaged(&x, N*sizeof(float));
+	delete [] x   ----------> cudaFree (x)
+	
+Para ejecutar la funcion en el device (GPU) en vez del host (CPU), la funcion add hay que agregarle algo que esta en CUDA que son los triple mayor menor "<<< >>>".
+
+	// Cambios de la funcion add, a esto se le llama Kernel
+	add(N, x, y) ---------> add<<<1, 1>>>(N, x, y)
+
+
+##########################################################################
+
+## ADD CUDA ##
+
+Objetivo: Suma de 2 arrays X y Y usando la GPU.
+
+#include <iostream>
+#include <math.h>
+
+// Kernel function to add the elements of two arrays
+__global__
+void add(int n, float *x, float *y)
+{
+  for (int i = 0; i < n; i++)
+    y[i] = x[i] + y[i];
+}
+
+int main(void)
+{
+  int N = 1<<20;
+  float *x, *y;
+
+  // Allocate Unified Memory – accessible from CPU or GPU
+  cudaMallocManaged(&x, N*sizeof(float));
+  cudaMallocManaged(&y, N*sizeof(float));
+
+  // initialize x and y arrays on the host
+  for (int i = 0; i < N; i++) 
+  {
+    x[i] = 1.0f;
+    y[i] = 2.0f;
+  }
+
+  // Run kernel on 1M elements on the GPU
+  add<<<1, 1>>>(N, x, y);
+
+  // Wait for GPU to finish before accessing on host
+  cudaDeviceSynchronize();
+
+  // Check for errors (all values should be 3.0f)
+  float maxError = 0.0f;
+  for (int i = 0; i < N; i++)
+    maxError = fmax(maxError, fabs(y[i]-3.0f));
+  std::cout << "Max error: " << maxError << std::endl;
+
+  // Free memory
+  cudaFree(x);
+  cudaFree(y);
+  
+  return 0;
+
+}
+
+## Compile: nvcc AddCUDA.cu -o AddCUDA
+## Execute: ./AddCUDA
+
+## Profiling: nvprof ./AddCUDA
+
+##########################################################################
+
+Algunas consideraciones que se tomaron:
+
+1. Cuando usa CUDA, las extensiones son ".cu", y se compila al igual que con gcc, g++ pero esta vez usa NVCC, al igual que ejecutarlo, es como linux.
+
+2. El "profiling" le muestra muchas cosas que hace la aplicacion, llamados a API, pero lo interesante es el uso de la funcion "add()" ya que es quien hace todo el programa.
+
+// Una parte del NVPROF
+// Nvidia Jetson TX1
+Time(%)      Time Calls Avg       Min       Max          Name
+100.00%  2.48197s  1   2.48197s 2.48197s 2.48197s add(int, float*, float*)
+
+Uy, son 2.5 segundos. Vamos a bajar esto, ̣¿como? Usando mas de 1 THREAD, explotando la capacidad de los GPU del sistema.
+
+
+SELECCIONANDO THREADS
+
+Por cierto, "threads significa Hilos" pero podemos dejarlo asi para cuando toque leer alguna documentacion.
+
+En el ejemplo anterior se uso "1 Thread" para ejecutar el "Kernel" de CUDA. Si quiero multiples, paralelos threads, modifico los valores (el 2do) de "<<< >>>", pero OJO, cada CUDA GPU corre los Kernels (las funciones) en Bloques de Threads en multiplos de 32.
+
+	// Threads (hilos, si, lo mismo)
+	// CUDA ejecuta Kernel en Bloques de multiplos de 32 Threads o Hilos
+	<<<1, 32>>> %%%%% Block = th1, th2, ......, th32
+	<<<1, 64>>> %%%%% Block = th1, th2, ......................, th64.
+	..... (asi sucesivamente)
+
+Si quiero saber en que thread del bloque estoy, uso la funcion "threadIdx.x", y si quiero saber cuanto es el tamaño del bloque, uso "blockDim.x".
+
+	// Nuevas funciones
+	add<<<1, 256>>>(N, x, y); // Tamaño de parallel threads (hilos para)
+	threadIdx.x		  // Posicion del Thread en el Bloque
+	blockDim.x		  // Tamaño del Bloque
+
+Entonces con todo lo anterior el kernel queda de la siguiente manera:
+
+	__global__
+	void add(int n, float *x, float *y)
+	{
+  	  int index = threadIdx.x;
+  	  int stride = blockDim.x;
+  	  
+	  // Cada block dim: ej. Y[0], Y[32], ...., Y[256]
+	  for (int i = index; i < n; i += stride)
+      	  y[i] = x[i] + y[i];
+	}
+
+Fijese que cada thread realiza la operacion inicial y la proxima es en el multiplo del blockDim.
+
+// Resultados del NVPROF con MultiThreating
+Time(%)   Time  Calls  Avg       Min       Max              Name
+100.00%  13.442ms 1  13.442ms  13.442ms  13.442ms  add(int, float*, float*)
+
+Espere, de 2.5seg paso a 13.5ms!. ¿Podemos mejorar? La respuesta es Sí, ya que podriamos explotar TODOS LOS BLOQUES QUE TIENE EL GPU para hacer la funcion.
+
+
+MAS ALLA DE LOS BLOQUES
+
+CUDA GPU tiene muchos procesadores paralelos agrupados en "Streaming Multiprocessors" o "SM" (si, como lo dicen en Jetson). Cada "SM" puede correr multiples bloques concurrentes.
+
+El 1er valor en "<<< >>>" es el numero de bloques de hilo (thread blocks). Los 2 valores crean algo llamado "grid".
+
+Teniendo N elementos a procesar, con un bloque de 256 threads, para tener al menos N threads en este hilo se usa N/BlockSize teniendo en cuenta de aproximarlo al valor superior para tener los suficientes threads.
+	
+	// Creanlo, (N+blockSize-1) / blockSize es como hacer la funcion
+	// techo de N/blockSize.
+	int blockSize = 256;
+	int numBlocks = (N + blockSize - 1) / blockSize;
+	add<<<numBlocks, blockSize>>>(N, x, y);
+
+Tenemos algo asi entonces en cada proceso:
+
+      Block0         Block1      ...       Block4095    // 4096 Bloques 
+      th1...th256   th1...th256   ...     th1...th256    // 256 threadsxbloque
+
+La posicion del indice, es decir la "Posicion del Thread en todos los bloques" (en el grid) se saca con la siguiente formula:
+
+	// indice = (PosicionBloque)(TamañoBloque) + (PosicionThread)
+	index = blockIdx.x * blockDim.x + threadIdx.x
+
+El kernel entonces queda de la siguiente manera, realizando algo denominado "grid-stride loop" que hace avanzar cada Thread hasta que no cumpla el for para terminar (asi, si hay mas de 1 ciclo completo de todos los threads en el programa se realicen sin problemas).
+
+	__global__
+	void add(int n, float *x, float *y)
+	{
+  	  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  	  int stride = blockDim.x * gridDim.x;
+
+  	  for (int i = index; i < n; i += stride)
+    	  y[i] = x[i] + y[i];
+	}
+
+// Resultados del NVPROF
+Time(%)      Time Calls   Avg       Min       Max            Name
+100.00%  2.5592ms  1    2.5592ms  2.5592ms  2.5592ms  add(int, float*, float*)
+
+De 13.5ms a 2.6ms, una vez mas disminuyo considerablemente.
+
+// Resumen de los tipos de Programacion
+//	    Tipo				  Tiempo	SpeedUp
+	1 CUDA Thread 				2.5 segundos	
+     1 CUDA Block (256Threads)			13.5 ms		185x
+  Many CUDA Block (256Threads x 3907Bloques)	2.6 ms		5.2x (al anterior)
+
+
+RESUMEN:
+
+1. Inicializa Array de forma que GPU y CPU puedan acceder a ella igualmente (Unified Memory es como se conoce)
+	
+	cudaMallocManaged()
+	cudaFree()
+
+2. Crea funcion kernel: una funcion que se ejecuta en el Device (GPU)
+	
+	add<<#Bloques, #ThreadsXBloque>>
+
+3. Obtengo la posicion del Thread en el bloque y el tamaño del bloque (en #threads).
+
+	threadIdx.x
+	blockDim.x
+
+4. Definicion de Grid
+
+	Grid = #Bloques * #ThreadsXBloque
+
+5. Obtengo el tamaño del Grid (en #Bloques)
+
+	gridDim.x
+
+6. Posicion global de un Thread especifico dentro del Grid.
+
+	PosicionGlobalThread = (Pos Bloque)(Tamaño del Bloque) + Pos Thread en Bloque
+	index = blockIdx.x * blockDim.x + threadIdx.x;
+
+7. Grid-Stride Loop: Loop que salta cada tamaño del Grid.
+
+	stride = blockDim.x * gridDim.x
+
+
+

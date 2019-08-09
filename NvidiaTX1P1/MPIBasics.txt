@@ -1,0 +1,219 @@
+MPI Basics
+
+Next i am going to tell some basic information about MPI programs.
+
+Taken from: http://mpitutorial.com/tutorials/mpi-hello-world/
+
+// The following text is in spanish...further i'll translate it
+
+MPI (Message Passing Interface), como su nombre lo indica es un programa que tiene como objetivo PASAR MENSAJES ENTRE SISTEMAS, esto es, PERMITIR LA COMUNICACION entre diferentes sistemas.
+
+MPI entonces comunica estilo red, usando, si se requiere, Broadcast, Reduce y cualquier otro modelo para que la informacion de la comunicacion se organice y se obtenga un resultado. Mas adelante veremos a que me refiero por eso pero es basicamente la idea.
+
+#################################################################################################
+
+## MPI HELLO WORLD ##
+
+Objetivo: "Hola mundo" indicando desde que nodo se menciona.
+
+#include <mpi.h>
+#include <stdio.h>
+
+int main(int argc, char** argv) 
+{
+    // Initialize the MPI environment
+    MPI_Init(NULL, NULL);
+
+    // Get the number of processes
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // Get the rank of the process
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    // Get the name of the processor
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
+    int name_len;
+    MPI_Get_processor_name(processor_name, &name_len);
+
+    // Print off a hello world message
+    printf("Hello world from processor %s, rank %d out of %d processors\n",
+           processor_name, world_rank, world_size);
+
+    // Finalize the MPI environment.
+    MPI_Finalize();
+}
+
+# Compilar: mpicc <archivo>.c -o <archivo>
+# Ejecutar: mpirun -np <#procesos> [-hosts <nodo1,nodo2,....>] ./<archivo> 
+
+##################################################################################################
+
+EXPLICACION:
+
+MPI se convierte entonces en una libreria para comunicar cosas. Tenemos un codigo normal en C, pero adentro de el agregamos 2 valores de inicio y final de MPI.
+
+	int main ()
+	{
+	    MPI_Init(NULL, NULL);
+
+	    MPI_Finalize();
+	}
+
+Ahora como minimo inicia la libreria y la cierra, es el core basico de un programa MPI. Lo que ahora se construye, "MPI_Comm_size" y "MPI_Comm_rank" (que se obtienen igual, con variable externa y luego pasandole el valor internamente) habla de la cantidad de procesos del programa y el Rank, que viene siendo el numero del proceso.
+
+	int main ()
+	{
+	    MPI_Init(NULL, NULL);
+
+	    // Cantidad de procesos (-np #)
+    	    int world_size;
+            MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+            // Rank de este sistema (#proceso)
+            int world_rank;
+            MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+	    MPI_Finalize();
+	}
+
+Para que diga "Hola mundo desde PROCESO 5" por ejemplo, se debe obtener el nombre desde "MPI_Get_processor_name" tal como lo muestra el ejemplo. Ya el resto es pura carpinteria (el printf y todo eso).
+
+	int main ()
+	{
+	    MPI_Init(NULL, NULL);
+
+	    // Cantidad de procesos (-np #)
+    	    int world_size;
+            MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+            // Rank de este sistema (#proceso)
+            int world_rank;
+            MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+ 	    // El nombre del nodo (1 nodo puede tener varios procesos)
+    	    char processor_name[MPI_MAX_PROCESSOR_NAME];
+    	    int name_len;
+    	    MPI_Get_processor_name(processor_name, &name_len);
+
+    	    // Ya esto es historia
+            printf("Hola mundo desde el Nodo %s, Rank %d de %d procesos\n",
+            processor_name, world_rank, world_size);
+
+	    MPI_Finalize();
+	}
+
+Y ya, basicamente casi todos los elementos tienen este tipo de estructura. "MPI_COMM_WORLD" es un tipo de comunicacion, se puede cambiar, pero lo basico se usa asi.
+
+Y la ejecucion mejor no la hacemos sin el makefile, sino tal cual se menciono en consola (es lo mismo).
+
+
+########################################################################################################
+
+## PING PONG PROGRAM ##
+
+Objetivo: Enviar un dato entre 2 nodos, de A a B y luego de B a A (Si, como ping pong, digo, tenis de mesa).
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char** argv) 
+{
+  const int PING_PONG_LIMIT = 10;
+
+  // Initialize the MPI environment
+  MPI_Init(NULL, NULL);
+
+  // Find out rank, size
+  int world_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+  int world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+  // We are assuming at least 2 processes for this task
+  if (world_size != 2) 
+  {
+    fprintf(stderr, "World size must be two for %s\n", argv[0]);
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+
+  int ping_pong_count = 0;
+  int partner_rank = (world_rank + 1) % 2;
+
+  while (ping_pong_count < PING_PONG_LIMIT) 
+  {
+    if (world_rank == ping_pong_count % 2) 
+    {
+      // Increment the ping pong count before you send it
+      ping_pong_count++;
+
+      MPI_Send(&ping_pong_count, 1, MPI_INT, partner_rank, 0, MPI_COMM_WORLD);
+
+      printf("Node %d sent and incremented ping_pong_count %d to %d\n",
+             world_rank, ping_pong_count, partner_rank);
+    } 
+    else 
+    {
+      MPI_Recv(&ping_pong_count, 1, MPI_INT, partner_rank, 0, MPI_COMM_WORLD,
+               MPI_STATUS_IGNORE);
+
+      printf("Node %d received ping_pong_count %d from %d\n",
+             world_rank, ping_pong_count, partner_rank);
+    }
+  }
+
+  MPI_Finalize();
+}
+
+########################################################################################################
+
+EXPLICACION 2:
+
+Bueno, en este caso se maneja otro aspecto basico en MPI: envio y recibimiento de mensajes. La idea es que el Nodo1 envie algo al Nodo2 (cualquier cosa) y luego cuando el Nodo2 lo reciba envie de nuevo eso al Nodo1.
+
+Para hacer esta especie de "juego", se debe usar 2 funciones: "MPI_Send" y "MPI_Recv". Como su nombre lo indica tienen la funcion de enviar y recibir mensajes, incluso tienen tags y el comunicador. Esta es su representacion:
+
+MPI_Send(void* data, int count, MPI_Datatype datatype, int destination, int tag, MPI_Comm communicator)
+
+MPI_Recv(void* data, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm communicator, 	    MPI_Status* status)
+
+
+MPI_Datatype <datatype> Puede ser (no todos):
+	MPI_SHORT 	short int
+	MPI_INT 	int
+	MPI_LONG 	long int
+	MPI_LONG_LONG 	long long int
+	MPI_FLOAT 	float
+	MPI_DOUBLE 	double
+	MPI_LONG_DOUBLE long double
+	MPI_BYTE 	char
+
+Entonces como todo, el programa inicia con "MPI_Comm_rank" y "MPI_Comm_size". Este programa solo funciona con 2 procesos, mas termina el programa. 
+
+Los 2 procesos ejecutan al mismo tiempo el programa, pero siempre 1 solo va a cumplir con el if, el otro solo ira al else en cada ciclo. El que entra al if al incrementar "ping_pong_count" hace que el siguiente paso vaya al else y asi con el otro Nodo pero empezando desde el else.
+
+
+OTRAS FUNCIONES
+
+1. MPI_Barrier(MPI_Comm communicator)
+	
+	Para crear una barrera de procesos, asi los procesos que llegan rapido "esperan" a los demas
+	para seguir la operacion. Tambien se puede ver como un punto de encuentro.
+
+2. MPI_Bcast(void* data, int count, MPI_Datatype datatype, int root, MPI_Comm communicator)
+	
+	En vez de decir "MPI_Send" y "MPI_Recv" en un while, se puede enviar a todos los procesos usando 		la operacion "MPI_BCast" que hace exactamente lo mismo.
+
+3. MPI_Scatter(void* send_data, int send_count, MPI_Datatype send_datatype, 
+	 void* recv_data, int recv_count, MPI_Datatype recv_datatype, int root, MPI_Comm communicator)
+
+	La idea es coger un dato y separarlo en varias partes para luego enviarlos a los distintos Nodos 		o procesos. (Nodo1:ABCD-> Nodo1:A,B Nodo2:C,D).
+
+4. MPI_Gather(void* send_data, int send_count, MPI_Datatype send_datatype, void* recv_data, 
+	      int recv_count, MPI_Datatype recv_datatype, int root, MPI_Comm communicator)
+
+	Si Scatter separa datos a procesos, Gather junta datos de distintos Nodos o procesos a un solo 		Proceso para hacer cualquier otra operacion. (Nodo2:A Nodo3:B Nodo4:C -> Nodo1:ABC)
+

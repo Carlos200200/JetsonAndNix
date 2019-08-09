@@ -1,0 +1,139 @@
+NVIDIA TEGRA TX1: Flashing and installing CUDA
+
+Here i explain how to install (flash) a NvidiaTX1 and install CUDA using debian host device.
+
+All the references are in this page: 
+	http://developer.download.nvidia.com/embedded/L4T/r23_Release_v1.0/l4t_quick_start_guide.txt
+
+Note: We use the version 28.1.0 because it works (on 24.2.2 it halted at booting)
+
+INSTALLING L4T
+
+1. Download the driver and sample root system:
+
+	L4T TX1 Driver Package -> Tegra210_Linux_R28.1.0_aarch64
+	L4T Sample Root Filesystem -> Tegra_Linux_Sample-Root-Filesystem_R28.1.0_aarch64
+
+
+2. Untar files and put the rootfs files:
+
+	sudo tar xpf Tegra210_Linux_R28.1.0_aarch64.tbz2
+	cd Linux_for_Tegra/rootfs/
+   	sudo tar xpf ../../Tegra_Linux_Sample-Root-Filesystem_R28.1.0_aarch64.tbz2
+   	cd ../
+   	sudo ./apply_binaries.sh
+
+Now we start using the Nvidia TX1.
+
+3. Put the system in RECOVERY MODE:
+
+	- Turn off the jetson (even detached the electric cable)
+	- Connect the Micro-USB
+	- Turn on again the system ()
+ 	- While is turning on, press and hold the Recovery Force (REC) button.
+	- WHile holding REC button, press the Reset (RST) button once.
+   
+   Now you are in recovery mode.
+
+4. Execute the flash application
+
+	sudo ./flash.sh jetson-tx1 mmcblk0p1
+
+   You can first check if the Jetson is currently connected to the PC with:
+
+	lsusb -> and you see something like:
+		  Bus 001 Device 005: ID 0955:7721 NVidia Corp.
+
+   In my case there is an error that say something like "/dev/loop0 is not block device. Terminating..", so have to do something extra:
+
+   4.1 "/dev/loop0 is not block device" Problem
+
+	sudo losetup --find
+
+	Once you make this operation go to 4 again (run the .flash.sh)
+
+When it has finished, you'll got the new system partition on nvidia. It says that reset the system but it reboot by default.
+
+This version has graphical UI, firefox it is not compatible in this new versions and you have a main user.
+
+	user: nvidia
+	password: nvidia
+
+
+CHANGE OF HOSTNAME
+
+To access the Jetson without knowing the ip address:
+
+1. Change the hostname in their files
+
+	sudo nano /etc/hostname
+	sudo nano /etc/hosts
+
+2. Reboot the system. (There is another way, but is better this way)
+
+/---------------------------------------------------------------------/
+
+INSTALLING CUDA
+
+In our project we have to use CUDA also, so that's why we put this installation here.
+
+Note: In the new version of the Nvidia Tegra, we have to install CUDA using Jetpack, a program that helps in installing a Jetson SDK, the problem is that ONLY WORKS ON A UBUNTU 14.04 host PC.
+
+Fortunately, we found a direct link to install the CUDA:
+
+	File: http://developer.download.nvidia.com/devzone/devcenter/mobile/jetpack_l4t/006/linux-x64/cuda-  		repo-l4t-8-0-local_8.0.34-1_arm64.deb
+
+	Method: https://elinux.org/Jetson/Installing_CUDA
+
+1. Download the .deb archive (could be on command line). It weight 1.14Gb.
+
+	Jetpack L4T 8.0 ARM64 -> wget http://developer.download.nvidia.com/devzone/devcenter/mobile/jetpack_l4t/006/linux-x64/cuda-repo-l4t-8-0-local_8.0.34-1_arm64.deb
+
+2. Install that package:
+
+	sudo dpkg -i cuda-repo-l4t-8-0-local_8.0.34-1_arm64.deb
+
+3. Download and install CUDA Toolkit depending on your version of CUDA
+
+	sudo apt-get update
+	sudo apt-get install cuda-toolkit-8-0
+
+4. Add yourself to the video group to allow acces to the GPU.
+
+	sudo usermod -a -G video $USER
+
+5. Add 32-bit CUDA paths (really don't know what happen here but is neccesary)
+
+	echo "# Add CUDA bin & library paths:" >> ~/.bashrc
+	echo "export PATH=/usr/local/cuda/bin:$PATH" >> ~/.bashrc
+	echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib:$LD_LIBRARY_PATH" >> ~/.bashrc
+	source ~/.bashrc
+
+Now you have CUDA installed, you can test the version (checking if it's installing correct):
+
+	nvcc -V
+
+
+TESTING CUDA SAMPLES
+
+1. Copy CUDA Samples in a folder (you like, in my case, Documents)
+
+	cuda-install-samples-8.0.sh /home/nvidia/Documents/
+
+2. Go to the folder and build the program (that takes 15 MINUTES on JetsonTX1)
+	
+	cd ~/NVIDIA_CUDA-8.0_Samples/
+	make
+
+3. Run some CUDA Samples (each folder at the end is the executable)
+
+	Examples:
+	
+	./1_Utilities/deviceQuery/deviceQuery
+	./1_Utilities/bandwidthTest/bandwidthTest
+
+	cd 0_Simple/matrixMul
+	./matrixMul
+	cd ../..
+
+More examples on the Method page, also you only have to explore each folder and file.

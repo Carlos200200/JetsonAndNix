@@ -1,0 +1,22 @@
+INSTALLING CUDA:
+
+- Se prueba con la version 7 de CUDA sin resultados.
+	- Error: arquitrectiras diferentes> armhf vs arm64 (jetson tx1)
+
+- LAs nuevas versiones de CUDA requieren jetpack (no hay links directos), pero afortunadamente existe un m'etodo seg'un una parte para sacarlo.
+
+Metodo para extraer los links del jetpack sin instalarlo:
+http://warppipe.net/blog/installing-cuda-packages-on-jetson-boards/
+
+PAg. donde se saco el link del CUDA:
+https://devtalk.nvidia.com/default/topic/982848/jetson-tx1/tx1-specific-arm64-deb-repo-for-cuda-8/post/5063154/
+	- Link del CUDA: wget http://developer.download.nvidia.com/devzone/devcenter/mobile/jetpack_l4t/006/linux-x64/cuda-repo-l4t-8-0-local_8.0.34-1_arm64.deb
+
+- No hice el m'etodo, pero si quiero CUDA 9 tendre que hacerlo, solo ejecute el comando wget
+
+Instalar CUDA:
+https://elinux.org/Jetson/Installing_CUDA
+
+- Ya con la descarga, es sencillo seguir los pasos de la pag de arriba y funciona sin problemas, limpiamente.
+
+- LUego se probo los CUDA SAmples y salio todo bien sin quejas.

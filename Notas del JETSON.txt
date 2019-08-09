@@ -1,0 +1,182 @@
+Notas del JETSON
+
+
+1. Haciendo share desktop
+
+https://askubuntu.com/questions/477947/what-do-i-need-for-remotely-accessing-my-ubuntu-14-04-desktop/703244
+
+- lo que dice es que hay que usar un tal dfcongig y hacerle algo, lo malo es que en el GUI de dconfig no se puede
+con el teclado ssolamente
+- si funcionó:
+	sudo apt-get install dconf-tools
+	go to org->gnome->desktop->remote-accessand toggle the require-encryption item to unchecked.
+	pero eso no se puede con teclado, entonces toca en consola: dconf write /org/gnome/desktop/remote-access/require-encryption false
+	y luego gsettings set org.gnome.Vino require-encryption false
+	con eso el cifrado se quita y mobaxterm (o cualquier otro vnc) puede conectarse
+- otra info: https://www.youtube.com/watch?v=GY75u6TthH4
+
+2. Por qué NIX
+https://www.domenkozar.com/2014/01/02/getting-started-with-nix-package-manager/
+	Install packages independent of your system environment (try installing Python 2.6, 2.7, 3.2, 3.3 and PyPy on CentOS)
+	Reproducible environment: instead of using language dependent package managers to build development environment, use language agnostic tool
+	Binary and source install
+	Give your unix user the power to install packages
+	Did I mention it's portable and built to be reproducible?
+	If I may, I would like to add two more reasons to use nix:
+	1- versioning: your profile has versions, you can revert back your system state to any previous version with just one command (that actually only affect a simbolic link change)
+	2- transactions: your profile's revision advances if and only if the transaction completes succesfully.
+https://nixos.wiki/wiki/Cheatsheet
+
+3. Camino UNICO?: usando NIXOS
+Problema: al parecer NIX en arquitecturas ARM no funcionan
+https://nixos.wiki/wiki/NixOS_on_ARM
+
+Mision 1: reemplazar el bootloader con un flash U-boot en el eMMC via recovery USB port
+(revisar en NOTAS NIXOS EN JETSON)
+
+
+4. ESTADO DEL ARTE
+
+computing on SoC
+http://www.cosa-project.it/applications.html
+-buscan la aplicacion de SoC en sistemas grandes
+
+http://lacasa.uah.edu/portal/index.php/research/37-jcc-jetson-charger-cluster
+
+ASTRO - A LOW-COST, LOW-POWER CLUSTER FOR CPU-GPU HYBRID COMPUTING USING THE JETSON TK1
+http://digitalcommons.calpoly.edu/cgi/viewcontent.cgi?article=2723&context=theses
+- ver el capi. 3, el software Linux4Tegra, modificacion de Ubuntu.
+
+Visualizing Real-Time Crowds on GPU Clusters
+http://www.jetsonhacks.com/2015/01/09/nvidia-jetson-tk1-simulating-visualizing-real-time-crowds-gpu-clusters/
+
+5. Las tarjetas JETSON TK1
+
+- Son 4, pero 2 tienen L4T t otros 2 no me dejan ni entrar.
+Tarjeta 1-2: SO ni idea
+Tarjeta 3-4: SO de nvidia funcional
+- se va a corregir las 1-2, gracias a 
+	http://charlab.github.io/jetson/2014/10/28/how-to-reinstall-original-file-system-on-jetson-tk1/
+	--Las direcciones wget estan rotas, pero es el mismo proceso para hacer pero con estas direciones
+	https://gist.github.com/jetsonhacks/2717a41f7e60a3405b34
+-IMPORTANTE: el 2do wget tar debe estar descomprimido en la carpeta q genero la 1ra descarga: Linux_for_Tegra/rootf
+- el ../../ indica "2 carpetas antes de donde estoy"
+- efectivamente aparece el nombre de jetson en VM Ubuntu tal como lo describe
+	https://demotomohiro.github.io/hardware/jetson_tk1/setup/recovery_mode.html
+-OJO: JETPACKIf you use JetPack you must use Ubuntu 14.04 on the host, there is no other option (although there will be a JetPack running on Ubuntu 16.04 in the near future
+- OS IN THE SD CARD
+	https://demotomohiro.github.io/hardware/jetson_tk1/setup/sdcard.html
+
+6. Info acerca de LOOPBACK DEVICES
+	I don't know if you are familiar with loopback devices, so pardon me if you already know. 
+	A blank file filled with NULL bytes is created at exactly the size of the file system to be 
+	installed (about 14 or 15 GB). Loopback then covers the blank file, and ext4 formatting takes place via loopback, 
+	making the file look just like a separate hard drive partition. All of this is on the host. 
+	The rootfs is copied over to this loopback mounted file just like a partition...this requires an exact 
+	copy of everything on the rootfs, including permissions, device special files, and symbolic links. 
+	Some boot loader configuration is also added to this loopback file system. Current Jetpack uses L4T R21.2, 
+	which then unmounts the loopback file (system.img) and moves it to system.img.raw. Following that a compressed
+ 	version of system.img.raw is created (a "sparse" version of the "raw" file) as system.img. R21.2 then downloads
+ 	the sparse image directly to the Jetson...had this been R19.x no sparse file would exist and only the raw file 
+	would be downloaded...this takes much more time under R19.x
+
+	So an ext4 formatted partition exists on the PC as both a raw loopback mounted form and as a 
+	compressed sparse file...the Jetson is never formatted because the file system itself is downloaded including 
+	formatting, file permissions, so on. If the raw or sparse file have an issue flash fails. 
+
+7. Sobre las USB, gparted e imagenes
+
+- lsusb: lista todas las conexiones por usb pero no señala la id
+- lsblk: lista las particiones en disco, TODAS con su respectivo id, para la usb y la principal.
+	/dev/sdc -> ejemplo de la USB
+- comando para escribir la imagen 
+	sudo dd if=sd-image-armv7l-linux.img of=/dev/sdc
+	sudo dd if=<ruta img> of=/dev/sdc status=progress bs=4M
+  la 2da es para VER QUE ESTA PASANDO!
+- tambien se puede instalar el gparted para imagenes:
+	sudo apt-get install usb-imagewriter gparted
+	sudo imagewriter
+
+8. La WIKI
+https://elinux.org/Jetson_TK1
+
+9. Conectar por VNC
+
+- Abrir Desktop Sharing y activar las casillas de "Permitir a otros usuarios ver mi escritorio" y
+ "Configurar router UpNp autamitcamente".
+- Luego ejecutar el siguiente comando:
+	sudo apt-get -y install dconf-tools
+	dconf write /org/gnome/desktop/remote-access/require-encryption false   /usr/lib/vino/vino-server --sm-disable start
+Y ya puede conectarse por VNC con MobaXterm
+
+https://askubuntu.com/questions/477947/what-do-i-need-for-remotely-accessing-my-ubuntu-14-04-desktop/703244
+https://ubunlog.com/vnc-su-uso-en-ubuntu/
+
+10. Conectar SSH
+
+- Para que se pueda usar ssh se debe instalar un paquete openssh-server
+	sudo apt-get install openssh-server
+  Luego reinicia el servicio:
+	sudo service ssh restart
+
+- Otros comandos utiles de ssh
+- /etc/init.d/ssh restart
+- service ssh restart
+
+11. Actualizar el apt get
+
+- sudo apt-get update
+- sudo apt-get upgrade
+- sudo apt-get install build-essential
+
+12. Instalar openmpi
+
+- sudo apt-get install openmpi-bin 
+  openmpi-common 
+  openssh-client openssh-server 
+  X libopenmpi1.3 X
+  X libopenmpi-dbg X
+  libopenmpi-dev
+
+13. Internet conexiones dhcp y estaticas
+
+- https://askubuntu.com/questions/470237/assigning-a-static-ip-to-ubuntu-server-14-04-lts
+
+14. Informacion de ARM ARCHITECTURE
+
+- Se debe a que a que ya hay versiones de prueba para la AArch64 architecture
+
+- Libro de ARMV8 
+	https://static.docs.arm.com/ddi0487/bb/DDI0487B_b_armv8_arm.pdf
+	-revisar pag. 32 en adelante
+
+- ARM maneja 3 architecture profiles:
+	A: Application Profile
+	R: Real-Time Profile
+	M: Microcontroller Profile
+   Por eso hay ARMV8-R y asi...
+
+- Mas info: ARM  Architecture Refere nce Manual
+
+15. Informacion de la Jetson basado en lo anterior:
+
+- De: https://elinux.org/Jetson_TK1:
+	CPU: NVIDIA "4-Plus-1" 2.32GHz ARM quad-core Cortex-A15 CPU 
+	with Cortex-A15 battery-saving shadow-core
+
+- El procesador es un ARM Quad-Core Cortex-A15
+
+- El ARM Cortex-A15 es un procesador de:
+	32 Bits
+	Arquitectura ARMv7-A (y sabemos que A significa Application Profile)
+
+- Entonces, todo el sistema es un SoC (System of a chip) que consta de 4 nucleos a
+2.3GHz con un ARMv7-A y de 32 bits. (Eso es el NVIDIA Tegra K1)
+
+- Del manual de referencia:
+	ARMv7-A Application profile, described in this manual:
+	• Implements a traditional ARM architecture with multiple modes.
+	• Supports a Virtual Memory System Architecture	(VMSA) based on a 
+	Memory Management Unit (MMU). An ARMv7-A implementation can be called a VM
+	SAv7 implementation.
+	• Supports the ARM and Thumb instruction sets.

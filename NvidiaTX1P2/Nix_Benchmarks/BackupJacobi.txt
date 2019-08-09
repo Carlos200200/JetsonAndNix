@@ -1,0 +1,26 @@
+#########################
+
+## BACKUPJACOBI.TXT
+
+##########################
+
+##################################################
+# ~/nixpkgs/pkgs/top-level/all-packages.nix
+##################################################
+
+### MISC
+
+  GCC = callPackage ../misc/GCC5 { };
+
+  OpenMPI = callPackage ../misc/OpenMPI3 { };
+
+  JacobiBench = callPackage ../misc/jacobi-bench { };
+
+  ExampleMPI = callPackage ../misc/examplempi { };
+
+/---------------------------------------------------------/
+
+##############################################################################
+
+
+

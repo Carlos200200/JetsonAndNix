@@ -1,0 +1,60 @@
+Python Pandas
+
+
+# https://towardsdatascience.com/a-quick-introduction-to-the-pandas-python-library-f1b678f34673
+# http://jonathansoma.com/lede/algorithms-2017/classes/fuzziness-matplotlib/understand-df-plot-in-pandas/
+
+# Starting: ~/anaconda2/bin/idle
+
+---------------------------------------------------------------------
+--Pruebas anteriores
+
+ tablaP[(tablaP["Num NODOS"] == 4)][["Num NODOS", "NB", "GFLOPS"]]
+
+df[(df["Num NODOS"]==2) | (df["Num NODOS"]==4)]
+
+df[(df["Num NODOS"]==2)]["NB"]
+
+---------------------------------------------------------------------
+
+#############################################################################
+## Pasos para graficar
+
+1. Importar Numpy, pandas, matplotlib
+
+	import numpy as np
+	import pandas as pd
+	import matplotlib.pyplot as plt
+
+2. Lea el archivo, en este caso CSV.
+
+	df = pd.read_csv("/home/carlos/Documents/DataAnalysis/Hpl2.csv")
+
+3. Caso especial: Agrupa los valores (NB, Nodos) saca el promedio y solo muestra ese agrupamiento con los Gflops. Unstack se refiere para poder graficarlo en barras de la mejor manera.
+
+	df.groupby(["NB", "Nodos"])["Gflops"].mean().unstack().plot(kind='bar', grid=True)
+	plt.show()
+
+4. Si quiere con label en X y Y, entonces agrega set.xlabel, pero se requiere q todo lo anterior se guarde en 1 variable (sera objeto de axes por lo q a ese objeto se le pone los labels de X y Y).
+
+	ax = df.groupby(["NB", "Nodos"])["Gflops"].mean().unstack().plot(kind='bar', grid=True)
+	ax.set_xlabel('NB')
+	ax.set_ylabel('GFlops')
+	plt.show()
+
+5. Tambien tiene fuera del promedio, la desviacion estandar y los valores en cajas
+
+	df.groupby(["NB", "Nodos"])["Gflops"].mean().unstack().plot(kind='box')
+	df.groupby(["NB", "Nodos"])["Gflops"].std().unstack().plot(kind='bar')
+
+6. Plotting muchos graficos en 1 solo: Se logra con el uso de fig y ax que son elementos de matplotlib para estos casos.
+
+	fig, axes = plt.subplots(nrows=2, ncols=2) // 4 graficos
+	jac4.groupby("NODOS")[ "GFLOPS"].mean().plot(kind='bar', ax=axes[0,0])  // Izq arriba
+	jac10.groupby("NODOS")[ "GFLOPS"].mean().plot(kind='bar', ax=axes[0,1]) // Der arriba
+
+
+Faltando:
+
+- Multiple plot in single file
+- Si no, poner los 3 jacobi en 1 solo pero en linea continua (nueva columna "tipoD" la de la ejecucion con el valor de "-d").

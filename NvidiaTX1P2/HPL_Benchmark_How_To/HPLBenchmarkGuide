@@ -1,0 +1,99 @@
+HPL BENCHMARK (HIGH PERFORMANCE LINPACK) STEP BY STEP
+
+
+This part i explain how to set HPL Benchmark for the TegraX1 cluter nodes.
+
+Taken for these pages:
+- https://www.slothparadise.com/compile-hpl-linpack/
+- https://www.howtoforge.com/tutorial/hpl-high-performance-linpack-benchmark-raspberry-pi/
+- http://www.crc.nd.edu/~rich/CRC_Summer_Scholars_2014/HPL-HowTo.pdf
+- https://www.youtube.com/watch?v=fiNG_Btbx0g
+
+For tuning:
+- http://www.netlib.org/benchmark/hpl/tuning.html
+
+// Note: From this part i'll write in spanish but then i'll translate this version.
+
+1. Instalar las librerias necesarias antes de HPL
+   - gfortran -> (ES NECESARIO?)
+   - MPICH2	-> La implementacion de MPI
+   - mpich2-dev -> Herrramientas de desarrollo
+   - BLAS	-> Basic Lineal Algebra Subprograms
+
+   1.1 gfortran
+	
+	sudo apt-get install gfortran
+
+   1.2 MPICH2
+
+	Hay un documento completo de esto, pero OJO, NO USE ./configure --disable-fortran, porque      		necesitamos a fortran.
+
+   1.3 BLAS
+
+	Hay que instalar una libreria llamada OPENBLAS dentro de las carpetas del dispositivo (no en 		la nube).
+
+	OpenBLAS web page: https://www.openblas.net/
+
+	wget http://github.com/xianyi/OpenBLAS/archive/v0.2.20.tar.gz
+	tar xvzf v0.2.20.tar.gz
+	cd OpenBLAS-0.2.20/
+	make FC=gfortran
+
+	sudo make install  // Puede ser tambien con prefix si quiere en otra parte
+
+	Aqui se instala en /opt/OpenBLAS (al menos que hubiera puesto PREFIX=<path>). Todos los nodos 		deben tener esto en el mismo lugar porque es donde van a buscar los binarios.
+	
+	
+	
+2. Descargar la carpeta de la suite del Benchmark
+
+   En este caso hay que aclarar que existen muchas versiones de este Benchmark dependiendo del tipo de 	  arquitectura, como el generico, intel o CUDA. En nuestro caso inicial haremos con el Generico, pero 	  luego haremos el de CUDA.
+
+   	wget http://www.netlib.org/benchmark/hpl/hpl-2.2.tar.gz
+
+3. Crear el Makefile, haciendo uso de algun makefile generico
+
+   Bueno, esta parte es la mas complicada de todas de la instalacion del Benchmark. Para crear el   	 binario de HPL se requiere conocer algunas especificaciones del sistema y fuera de eso referirse a las  librerias que le pidieron anteriormente.
+
+   Se ejecuta una operacion en /setup para crear un Makefile generico, que luego se copiara en la carpeta mas alta de estos archivos para luego modificar ciertos valores.
+
+	cd hpl-2.1/setup
+	sh make_generic
+	cd ..
+	cp setup/Make.UNKNOWN Make.Tegra
+
+4. Modificar el Makefile generico para linkear valores del sistema
+
+   Se cambian los siguientes valores (esta dividido por partes):
+
+   4.1 Arquitectura y el directorio del HPL
+
+	ARCH         = UNKNOWN		->	ARCH         = Tegra	
+	TOPdir       = $(HOME)/hpl	->	TOPdir       = $(HOME)/cloud/HPLBenchmark/hpl-2.2
+ 
+   4.2 Librerias MPI // NO PROBADO // PUEDE SER CON LA .SO
+
+	MPdir        = /usr/local
+	MPinc        = 
+	MPlib        = $(MPdir)/lib/libmpi.a
+
+    4.3 Librerias de BLAS
+
+	LAdir        = /opt/OpenBLAS
+	LAinc        = -I$(LAdir)/include
+	LAlib        = $(LAdir)/lib/libopenblas.a
+
+    4.4 Compiladores y Linkers
+
+	CC           = /usr/local/bin/mpicc
+	CCFLAGS      = $(HPL_DEFS) -fomit-frame-pointer -O3 -funroll-loops -W -Wall -pthread
+
+	LINKER       = $(CC)
+
+    4.5 Otros (No se si son necesarios por los linkers)
+
+	F2CDEFS      = -DAdd__ -DF77_INTEGER=int	
+
+5. Make
+
+	make arch=Tegra

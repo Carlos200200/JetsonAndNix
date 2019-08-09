@@ -1,0 +1,67 @@
+## NIX REVISIONES
+
+Paginas de referencia general:
+
+	https://adelbertc.github.io/posts/2017-04-08-first-nix-derivation.html#fn4
+	http://mjhoy.com/journal/2016/02/nix.html
+	http://www.boronine.com/2018/02/02/Nix/
+	https://qfpl.io/posts/nix/building-things-with-nix/
+
+	http://chromaticleaves.com/posts/nix-in-2-days.html
+
+          https://blog.galowicz.de/2018/02/27/managing_libraries_with_nix/
+
+################################################################################
+
+## helloraiz.c
+
+#include <stdio.h>
+#include <math.h>
+
+#define PI 3.141592653589
+
+int main()
+{
+	printf("hello, world\n");
+	printf("La raiz cuadrada de pi es: %lf \n", sqrt(PI));
+	
+	return 0;
+}
+
+#####
+
+
+## prueba2.nix
+
+with import <nixpkgs> {};
+stdenv.mkDerivation
+{
+  name = "helloRaiz";
+  src = /home/carlos/helloraiz.c;
+
+  inherit gcc coreutils;
+  
+  builder = ./builderRaiz.sh;
+}
+
+#####
+
+## builderRaiz.sh
+
+export PATH="$gnutar/bin:$gcc/bin:$gnumake/bin:$coreutils/bin:$gawk/bin:$gzip/bin:$gnugrep/bin:$gnused/bin:$binutils_unwrapped/bin"
+mkdir $out
+gcc $src -o $out/holaRaiz
+
+
+#### build: nix-build prueba2.nix
+#### exec:  "direcc"/holaRaiz
+
+##############################################################################
+
+
+proxima parte:
+
+- probar lo que se hizo dentro de un entorno puro de NIX (a ver q pasa con gcc)
+-hacer lo que se hizo aqui http://mjhoy.com/journal/2016/02/nix.html 
+- otro buen ejemplo lo hace https://qfpl.io/posts/nix/building-things-with-nix/
+- ahora si, jacobi benchmark.

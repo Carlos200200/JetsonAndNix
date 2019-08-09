@@ -1,0 +1,109 @@
+NIX OS EN JETSON
+
+Camino UNICO?: usando NIXOS
+Problema: al parecer NIX en arquitecturas ARM no funcionan
+https://nixos.wiki/wiki/NixOS_on_ARM
+
+Mision 1: reemplazar el bootloader con un flash U-boot en el eMMC via recovery USB port
+
+1. Se descarga la imagen de la pagina, es armv7l
+https://www.cs.helsinki.fi/u/tmtynkky/nixos-arm/installer/
+
+2. Usar tegra uboot flahser scripts
+https://github.com/NVIDIA/tegra-uboot-flasher-scripts/blob/master/README-user.txt
+https://github.com/NVIDIA/tegra-uboot-flasher-scripts
+(See README-developer.txt to get the source and build it, then
+README-user.txt to run it)
+cierta info: https://elinux.org/Tegra/Mainline_SW/Nouveau
+
+3. NVIDIA Jetson TK1 - Install Linux for Tegra (L4T) 21.1 
+https://www.youtube.com/watch?v=1ZyACoenTNM
+http://www.jetsonhacks.com/2014/11/05/jetson-tk1-linux-tegra-l4t-21-1-install/
+tutorial: https://gist.github.com/jetsonhacks/2717a41f7e60a3405b34
+
+sudo ./flash.sh -S 14580MiB jetson-tk1 mmcblk0p1
+
+4. Conetsarse SSH en NIXOS
+
+- If you would like to continue the installation from a different machine 
+you need to activate the SSH daemon via systemctl start sshd. 
+In order to be able to login you also need to set a password for root using passwd.
+
+
+5. INFORMACON basica de NIXOS
+
+- nixos-version
+18.03.git.7ebacd1a43 (Impala)
+
+- http://fluffynukeit.com/installing-essential-software-in-nixos/
+- https://gricad.univ-grenoble-alpes.fr/sites/gricad/files/Mediatheque/Documents/Calcul/CIMENT_2016-06-23/4b-2016-06-23-nix.pdf
+
+
+6. Notas sobre la arquitectura
+
+- Se debe a que a que ya hay versiones de prueba para la AArch64 architecture
+
+- Libro de ARMV8 
+	https://static.docs.arm.com/ddi0487/bb/DDI0487B_b_armv8_arm.pdf
+	-revisar pag. 32 en adelante
+
+- ARM maneja 3 architecture profiles:
+	A: Application Profile
+	R: Real-Time Profile
+	M: Microcontroller Profile
+   Por eso hay ARMV8-R y asi...
+
+- Mas info: ARM  Architecture Refere nce Manual
+
+
+7. Comandos NIXOS
+
+- Habilitar sistema en ssh
+	systemctl start sshd
+- Nuevo root password
+	passwd
+- Ip y net options
+	ifconfig
+- Carpeta maestra de NIXOS
+	/etc/nixos/configuration.nix
+- Habilitar keyboard de tipo español (en NixConfig)
+ 	# Select internationalisation properties.
+   	 i18n = {
+     	 consoleFont = "Lat2-Terminus16";
+     	 consoleKeyMap = "la-latin1";
+     	 defaultLocale = "en_US.UTF-8";
+   	};
+- SSHD para NIXOS
+	services.openssh.enable = true;
+	services.openssh.startWhenNeeded = true;
+
+8. Instalacion NIXOS en ARM
+
+- Una vez hecho flash en la SDCARD se pone en la JetsonTK1 y lo botea.
+- Queda como un live cd temporal
+
+- Se crea las particiones con fdisk, y se monta un archivo /mnt en ella.
+- /mnt/..../configuration.nix se modifica para instalarlo.
+- Comando de instalación de NIX:
+	nixos-install
+  Ese comando busca el /mnt/etc/nixos/configuration.nix para hacer la build del sistema y descarga los
+  los paquetes necesarios para la instalacion.
+- Luego se reinicia el sistema
+	reboot
+
+NO! : Al instalar NIXOS en jetson al final no hace nada, se tira el SO de arranque secundario
+por problemas de compatibilidad o algo así.
+En el manual decia que USARA LA SD CARD PARA "INSTALAR" el software, pero esta instalacion se refiere a
+que simplemente CAMBIE LA CONFIGURACION EN CONFIGURATION.NIX Y HAGA NIXOS REBUILD.
+Ah, ahora si entendi que decia con eso: "...though if you know exactly what you're doing and how U-Boot 
+on your board works, you can use nixos-install as usual. " , ese usual era con nixos-install.
+
+Curiosamente el mismo problema del NIXOS dentro del ARM se ve como inicio en la tarjeta luego de la configuracion.
+
+9. Conexion Serial
+
+- Resulta que al hacer Nixos-rebuild solo sirve con cable DB9.
+- USB to Null Modem RS232 DB9 Serial DCE Adapter cable with FTDI.
+
+- http://www.jetsonhacks.com/2015/12/02/serial-console-nvidia-jetson-tk1development-kit/
+- http://developer.download.nvidia.com/embedded/jetson/TK1/docs/3_HWDesignDev/JTK1_DevKit_Specification.pdf

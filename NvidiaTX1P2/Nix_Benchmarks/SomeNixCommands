@@ -1,0 +1,30 @@
+## SOME NIX COMMANDS
+
+
+# Innstall Package
+nix-env -i <package>
+
+# List available packages (q: query, a: available)
+nix-env -qa
+
+# List available packages with "path to nixpkgs"
+nix-env -qaf </path to nixpkgs>
+
+nix-collect-garbage -d
+
+# Unnistall package
+nix-env -e <package>
+
+# Build a package (-K: temp for the build info, -A: selecting attribute in /pkgs/top-level/allpackages.nix)
+nix-build -A <package> -K
+
+///////////////////
+
+# Installing: dry run is without doing anything
+nix-env -f pkgs/top-level/all-packages.nix -i f-spot --dry-run
+
+# Install directly of the path
+nix-env -f . -iA ExampleMPI
+
+# If a package exists in the repository of path
+nix-env -qaf ~/nixpkgs 'examplempi*'

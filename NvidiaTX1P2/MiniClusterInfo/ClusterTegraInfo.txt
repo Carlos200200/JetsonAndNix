@@ -1,0 +1,88 @@
+#################################
+## Mini-Cluster Jetson Tegra TX1
+#################################
+
+The little cluster of 8 NVIDIA Jetson's TX1 is connected with a switch and use the computer to store the data, there is an imaging telling this connections and the number of each Tegra.
+
+#Accessing:
+
+All the Tegras can accessed via ssh using "ssh nvidia@Tegra<x>" where <x> is one of the 8 tegras.
+
+	ssh nvidia@Tegra1	-> Also could be inside one of the Tegras
+	ssh nvidia@Tegra2
+
+# Access the NFS file:
+
+The NFS file is called "cloud" and is on:
+
+	carlos@dukas: cd ~/cloud
+
+And on the Tegras are the cloud file to mount this file:
+
+	nvidia@Tegra1: cd ~/cloud
+
+But for the "activating" this mount we have to do 3 commands.
+
+	sudo mount -t nfs MasterHosts:/home/carlos/cloud /home/nvidia/cloud
+	eval "$(ssh-agent)"
+	ssh-add ~/.ssh/Tegra1Key
+
+Without that they can't connect to the NFS File and they can't "ssh" between the NVIDIA Jetsons.
+
+# Access NIX File:
+
+All the NVIDIA Tegra have the "Nix Store" via NFS (~/cloud/nix) inside the normal "Nix Store". This file are on /etc/fstab/ and to activate have to run the command,
+
+	sudo mount -a
+
+EXCEPT Tegra4 that has its own Nix Store without NFS.
+
+# Password
+
+The password is the standart on the system, "nvidia".
+
+# Tegra4: Special Case
+
+The Tegra4 has a special case of configuration due to in this tegra we try the Jacobi Benchmark derivation that spend a lot disk space. Thats the reason that we have a disk drive with all the OS in this Tegra.
+
+################################################################
+
+# Normal Use of the NVIDIA Tegra
+
+user: carlos
+password: fdebian
+
+carlos@dukas: ssh nvidia@Tegra1
+
+nvidia@Tegra1: sudo mount -t nfs MasterHosts:/home/carlos/cloud /home/nvidia/cloud
+nvidia@Tegra1: eval "$(ssh-agent)"
+nvidia@Tegra1: ssh-add ~/.ssh/Tegra1Key
+nvidia@Tegra1: sudo mount -a
+		password: nvidia
+
+# Making a simple Jacobi Test
+
+nvidia@Tegra1: 
+	cd ~/cloud/clusterSoCBench-master/Jacobi/bin/
+	mpirun -np 1 -host Tegra1 ./jacobi_cuda_normal_mpi -t 1 1
+
+
+##################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

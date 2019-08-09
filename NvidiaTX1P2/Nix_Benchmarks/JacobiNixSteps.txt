@@ -1,0 +1,283 @@
+# Jacobi-Nix Step by Step
+
+#########################################################################################
+# Web pages of help (references):
+
+	https://adelbertc.github.io/posts/2017-04-08-first-nix-derivation.html#fn4
+	http://mjhoy.com/journal/2016/02/nix.html
+	http://www.boronine.com/2018/02/02/Nix/
+	https://qfpl.io/posts/nix/building-things-with-nix/
+
+	http://chromaticleaves.com/posts/nix-in-2-days.html
+
+	Algunas definiciones de paramterios en NIx
+        https://blog.galowicz.de/2018/02/27/managing_libraries_with_nix/
+
+	*http://sandervanderburg.blogspot.com/2015/10/deploying-prebuilt-binary-software-with.html
+	*https://nixos.org/patchelf.html
+	*https://nixos.wiki/wiki/Packaging/Binaries#Starting_Point
+
+  	*https://blog.kiloreux.me/2018/05/24/learning-nix-by-example-building-ffmpeg-4-dot-0/
+
+   	Para automatizar librerias nativas
+	https://nixos.wiki/wiki/How_to_give_Nix_software_access_to_native_libraries_when_running_Nix_package_manager_on_a_non-NixOS_distribution
+ 	
+	Cuentan cosas importantes, PRO y CONTRAS de NIX
+	https://www.reddit.com/r/haskell/comments/1x0cjs/how_i_develop_with_nix/
+
+#########################################################################################
+
+In this part we are going to text the step by step of our process in the making of Jacobi Benchmark for Jetson TX1.
+
+Jacobi benchmark need 2 import libraries:
+1. MPI (Como mvapich2, openmpi)
+2. CUDA ("nvcc")
+
+
+1. Create directory on a cloning nixpkgs and copy the contents of the benchmark
+
+	~/nixpkgs/pkgs/misc/Jacobi => This have bin and src
+
+2. Create default.nix and in the top of nixpkgs (~/nixpkgs) use nix-build.
+
+	nix-build -A jacobi-bench -K
+
+Problem: some errors directly to makefile (error 127), that say that doen't found the libraries of mpic++ (didnt found the command), but i have all of this. Perphaps was something in Nix Bash that have to link it against in our PATH.
+
+ 	https://github.com/NixOS/nix/issues/670
+	
+	export NIX_STORE_DIR=$HOME/nix/store
+	export NIX_STATE_DIR=$HOME/nix/var/nix
+	export NIX_LOG_DIR=$HOME/nix/var/log/nix
+
+Update: the derivations going to a full space in the hard disc (problems also for RAM file), that are file on a issue in the web page.
+
+	https://github.com/NixOS/nix/issues/1969
+
+	" problem: This is a major issue because installation something like CUDA 9.0 ( > 2GB) on a medium machine with 4GB RAM fails..."
+
+#################
+**Subproblem: Expanding the root system using external HDD
+	https://raspberrypi.stackexchange.com/questions/40358/expanding-size-of-the-root-using-external-hdd
+
+Solution: https://www.jetsonhacks.com/2017/01/28/install-samsung-ssd-on-nvidia-jetson-tx1/
+
+## Status> Solved
+#################
+
+The last problem was resolved usign the last web page, but after 1h30min of compiling a new problem was arrised:
+
+#-----------------------------------------------------------------------------------------
+checking for references to /tmp/nix-build-patch-2.7.6.drv-0 in /home/nvidia/nix/store/01hwdhr4rpl5dqr5gabnk9wykg7x238s-patch-2.7.6...
+building '/home/nvidia/nix/store/va9q574ngiab36zs7sy0zv4175clydv7-stdenv-linux.drv'...
+building '/home/nvidia/nix/store/64n8rvb5s15dwddk9lqgg1j1yd2cjnbk-jacobi-bench.drv'...
+building
+/home/nvidia/nix/store/x1i1hdbdcyaxlrr2naxjziqzfb0wp8zg-stdenv-linux/setup: line 1286: cd: /homeless-shelter/nixpkgs/pkgs/misc/jacobi-bench/src: No such file or directory
+note: keeping build directory '/tmp/nix-build-jacobi-bench.drv-1'
+builder for '/home/nvidia/nix/store/64n8rvb5s15dwddk9lqgg1j1yd2cjnbk-jacobi-bench.drv' failed with exit code 1
+error: build of '/home/nvidia/nix/store/64n8rvb5s15dwddk9lqgg1j1yd2cjnbk-jacobi-bench.drv' failed
+
+#-----------------------------------------------------------------------------------------
+
+proximas acciones:
+
+- revise un modo mas facil: empaquete 1 solo archivo desde makefile pero usando mpicc.
+
+
+#CAPITULO 1: ERRORES DE COMPILACION CON NVCC Y OPENMPI
+
+#---------------------------------------------------------------------------------------------
+these derivations will be built:
+  /nix/store/jq37jrn1vvzs07x5mkyhm1zz8cjf47pk-jacobi-bench.drv
+building '/nix/store/jq37jrn1vvzs07x5mkyhm1zz8cjf47pk-jacobi-bench.drv'...
+building
+mkdir -p ../bin
+mpic++ -o ../bin/jacobi_cuda_normal_mpi jacobi.o input.o host.o device.o  cuda_normal_mpi.o  -L/usr/local/cuda-8.0/targets/aarch64-linux//lib -lcudart -lcuda
+/nix/store/a245zacjzf3qw0davhvlfarihcy2yyrc-binutils-2.30/bin/ld: cannot find -lcudart
+/nix/store/a245zacjzf3qw0davhvlfarihcy2yyrc-binutils-2.30/bin/ld: cannot find -lcuda
+/nix/store/a245zacjzf3qw0davhvlfarihcy2yyrc-binutils-2.30/bin/ld: cannot find -lmpi
+collect2: error: ld returned 1 exit status
+make: *** [Makefile:80: ../bin/jacobi_cuda_normal_mpi] Error 1
+note: keeping build directory '/tmp/nix-build-jacobi-bench.drv-0'
+builder for '/nix/store/jq37jrn1vvzs07x5mkyhm1zz8cjf47pk-jacobi-bench.drv' failed with exit code 2
+error: build of '/nix/store/jq37jrn1vvzs07x5mkyhm1zz8cjf47pk-jacobi-bench.drv' failed
+#---------------------------------------------------------------------------------------------
+
+#########################
+#Comandos
+############################
+
+Lee todo el ELF para ver las dependencias
+readelf -d ./result/bin/pngout
+
+
+##############################
+
+
+Instalando openmpi de NIx
+-Fallo porque no es compatible aun
+- se ponen 
+	{ allowUnsupportedSystem = true; }
+  dentro de ~/.config/nixpkgs/config.nix
+
+#####################################################################################
+
+Hay una derivada funcional de OpenMPI (MPICH) pero luego falla por algo de Haskell. Asi mismo, pasa lo mismo si, habiendo derivado OpenMPI luego haciendo ejemplo usandolo como libreria, pasa el mismo error del Haskell.
+
+# /home/nvidia/nix/store/2qp203bsrbglvx2yf2wq134vkcr6xfp9-examplempi
+# /home/nvidia/nix/store/9fsz6aw652mf4fmk5ih0lbxc12cpw8y0-examplempi
+
+####---
+https://nixos.wiki/wiki/How_to_give_Nix_software_access_to_native_libraries_when_running_Nix_package_manager_on_a_non-NixOS_distribution
+
+
+1. El OpenMPI de alguna forma funciona pero solo dentro de su entorno NIX, de resto genera errores de acceso y permisos que ni idea, ademas dentro no se puede ejecutar como uno mas, tocaria, obviamente, instalarlo, pero en ese caso vuelve a generar un error desconocido (algo de HASKELL).
+
+Ahora la idea es ver que pasa al instalar Jacboi con este tipo de OPenMPI a ver si funciona.
+
+# Seguimos con los pronlemas...
+
+substituteInPlace makefile --replace /usr $out
+
+LD_LIBRARY_PATH solo funciona con un WRAPPER
+
+REVISAR: 
+https://adelbertc.github.io/posts/2017-04-08-first-nix-derivation.html#fn4
+http://sandervanderburg.blogspot.com/2015/10/deploying-prebuilt-binary-software-with.html
+https://nixos.org/patchelf.html
+
+2. Se copia la LIBRERIA CUDA completa, y al inicio hubo problemas de memoria, pero luego de alguna forma en un reinicio funciono sin necesidad de swapping, pero el resultado de NIX fue...
+
+	Assembler messages:
+	Fatal error: can't create jacobi.o: Permission denied
+
+Sigue con los problemas de swap ahora, la pagina:
+
+	https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-16-04
+
+Muestra como hacer el swap de manera sencilla pero al intentar hacer swapping sale un error, ya que resulta que el NVIDIA TX1 viene pre-build con CONFIG_SWAP desactivado.
+
+	https://devtalk.nvidia.com/default/topic/901380/tx1-swapon-failed-function-not-implemented/
+
+"Permission denied": Se supero poniendo chmod 777 -R a todo el NIX Store (si, de manera burda).
+
+Ahora el problema resulta en que dice algo de NVCC, pero se corrige haciendio muchios exports e includes:
+
+	Makefile:
+	NVCCFLAGS=-O3 -Xcompiler -march=armv8-a -I/usr/local/cuda-8.0/targets/aarch64-linux/include
+
+	default.nix:	
+	export PATH=$PATH:$out/local/cuda-8.0/bin
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$out/local/cuda-8.0/targets/aarch64-linux/lib/
+
+"Nuevo error: GCC NOT SUPPORTED!"
+/nix/store/4151nb0vmijln7zqlvbdvjinhy7vnhn1-jacobibench/local/cuda-8.0/targets/aarch64-linux/include/host_config.h:119:2: error: #error -- unsupported GNU version! gcc versions later than 5 are not supported!
+ #error -- unsupported GNU version! gcc versions later than 5 are not supported!
+  ^~~~~
+
+Bueno... este error sinceramente ni idea ya que en el normal de TX1 funciono sin problenmas, entonces voy al error y es un un LLAMADO desde "cuda_runtime.h" a "host_config.h" a traves de include, y dentro de "host_config.h" hay un condicional que NI IDEA PORQUE DICE QUE NO FUNCIONA AQUI PERO BUENO.
+
+	SLN: SE cambia el condicional a:
+		#if __GNUC__ > 6
+
+NO funciono.
+
+Luego me di cuenta de que trata este problema, el gcc no coge el del sistema (which gcc: 5.4.0), SINO el de NIX que esta demasiado lejos (gcc 7.3.0).
+
+Como qye hay un gcc5 en nix store...se usa ese y...FUNCIONA, en parte.
+
+Vuelve el error de lcuda en otro de los make que hay que hacer.
+
+3. Se elimina -lcuda en los flags del makefile y de alguna forma...funciona?
+
+Compila y deriva en NIX, pero al hacer "mpirun ..... -t 1 1" falla.
+
+	Error: CUDA result "CUDA driver version is insufficient for CUDA runtime version" for call "cudaGetDeviceCount(&devCount)" in file "CUDA_Normal_MPI.c" at line 55. Terminating...
+
+Sera culpa de no tener -lcuda?
+
+3. "Se agrega -lcuda a Makefile de nuevo, pero copiando en /lib el archivo libcuda.so"
+
+JacobiDerivada: /nix/store/kll6145d0vyara8ca10kbcfnf8mdskp5-jacobibench
+
+Donde estan las librerias: /usr/lib/aarch64-linux-gnu/tegra/
+
+Buscar todos los ldd libcuda.so.1 y ponerlos en el makefile a ver si funciona.
+
+LO que pasa es que esta poniendo en linea todas las librerias de "libcuda.,so.1":
+
+	ldd libcuda.so.1
+		linux-vdso.so.1 =>  
+		libm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 
+		libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 
+		libdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 
+		librt.so.1 => /lib/aarch64-linux-gnu/librt.so.1
+		libpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 
+		libnvrm_gpu.so => /usr/lib/aarch64-linux-gnu/tegra/libnvrm_gpu.so 
+		libnvrm.so => /usr/lib/aarch64-linux-gnu/tegra/libnvrm.so
+		libnvidia-fatbinaryloader.so.28.1.0 => /usr/lib/aarch64-linux-gnu/tegra/libnvidia-fatbinaryloader.so.28.1.0
+		/lib/ld-linux-aarch64.so.1
+		libnvos.so => /usr/lib/aarch64-linux-gnu/tegra/libnvos.so 
+
+SAbiendo eso, se copia "libnvrm.so" y "libnvos.so" a la carpeta y se linkea en el makefile.
+
+	"nueva carptea": ~/.jacobi/
+
+Hmmm no funciona, sigue con el problema de sobrememoria, entonces con patchelf y tampoco. La ultima opcion es usar MakeWrapper a nvcc del bin que se tiene a ver si con eso.
+
+Alguien que tampoco le funciona CUDA en NIX: https://news.ycombinator.com/item?id=15478209, busque por CUDA.
+
+4. "Funciono...creo"
+
+	Derivada y MPIRUN:
+	/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun
+	/nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench
+
+La copia de los default.nix y carpetas estan en backupJacobi.txt.
+
+Se hace garbage collector a ver como queda el NIX STORE.
+
+	nix-collect-garbage
+
+	/---
+	deleting unused links...
+	note: currently hard linking saves -0.00 MiB
+	3571 store paths deleted, 138482.57 MiB freed
+	---/
+
+## PRUEBAS
+
+	mpirun -np 1 --host Tegra4 ./result/bin/jacobi_cuda_normal_mpi -t 1 1
+
+	/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 1 --host Tegra4 ./result/bin/jacobi_cuda_normal_mpi -t 1 1
+
+
+## PRUEBA 2
+
+Ahora, se hace NIX-SHELL a ver si deriva en puro.
+
+##########################################################################
+
+# Derivada y MPIRUN
+  /nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun
+  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench
+
+##########################################################################
+
+################
+## PARTE 2
+################
+
+~/cloud/clusterSoCBench-master/Jacobi/bin
+	 mpirun -n 2 -host Tegra4,Tegra7 ./jacobi_cuda_normal_mpi -t 2 1
+
+Lo anterior funciona, pero....
+~/cloud/clusterSoCBench-master/Jacobi/bin
+	
+Se hace NFS segun lo dice la pag: https://nixos.wiki/wiki/NFS de la sig. forma en fstab:
+	nano /etc/fstab
+		MasterHosts:/home/carlos/cloud/nix /nix nfs nofail,x-systemd.device-timeout=4,local_lock=all 0 0
+	sudo mount -a
+
+
+

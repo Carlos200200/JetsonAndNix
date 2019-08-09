@@ -1,0 +1,9 @@
+/home/carlos/Documents/NvidiaTx1/Nix_Benchmarks/JacobiBenchResults.ods
+/home/carlos/Documents/NvidiaTx1/Jacobi_Benchmark/Results.ods
+/home/carlos/Documents/NvidiaTx1/HPL_Benchmark_How_To/CUDA HPL/Resultados.ods
+
+/home/carlos/Documents/CarlosProject/Benchmarks_Guides/Jacobi_Benchmark/Results.ods
+
+/home/carlos/Documents/DataAnalysis/HPLResults.ods
+/home/carlos/Documents/DataAnalysis/Hpl.ods
+/home/carlos/Documents/DataAnalysis/JacobiResults.ods

@@ -1,0 +1,94 @@
+Linux helpful Commands
+
+
+1. List mounted devices
+	df -h
+
+2. Mount a device, from a place to another file
+	sudo mount -t nfs MasterHosts:/home/carlos/cloud ~/cloud
+
+3. Compile and run MPI program
+	mpicc cpi.c -o cpi
+	mpirun -np 2 --Hosts Tegra1,Tegra2 ./cpi
+
+4. Mount the NFS system on your cloud file
+	sudo mount -t nfs MasterHosts:/home/carlos/cloud /home/nvidia/cloud
+
+5. Creating the agent to access ssh passwordless (eg.: Tegra1)
+	eval "$(ssh-agent)"
+	ssh-add ~/.ssh/Tegra1Key
+
+6. Copy without ssh-copy-id
+	scp <public key direct> <user>@<ip>:<directory>
+	scp ~/.ssh/Tegra2Key.pub nvidia@Tegra1:~/.ssh
+
+7. How i know if the agent is running
+	ps aux | grep ssh
+
+8. See process running
+	ps aux | grep <letras>
+	pgrep <nombre progrn>
+
+9. Kill a process
+	kill -9 <ID process>
+
+10. Untar archives
+	tar xvzf <file.tar.gz>
+
+11. Kernel log (when a process was killed)
+	dmesg -T| grep -E -i -B100 'killed process'
+
+12. Find a file
+	find <adrress> -name <words>
+
+13. See the links of the programm
+	ldd <ejecutable>
+
+14. See if OpenMPI is cuda aware
+	ompi_info --parsable -l 9 --all | grep mpi_built_with_cuda_support:value
+		>>mca:mpi:base:param:mpi_built_with_cuda_support:value:true
+
+15. Tegrastats: for CPU and GPU seeing
+	/home/nvidia/tegrastats o <en ~/: ./tegrastats>
+
+16. Memory check using cuda tools
+	cuda-memcheck mpirun -np 1 ./run_linpack
+
+17. Looking for a word in many files
+	grep --include=\*.{c,h} -rnw "cudaHostRegister" /home/nvidia/cloud/CUDAHPLBenchmark/hpl-2.0_FERMI_v15/
+
+18. Using MCA to see all the problems on MPI
+	MV2_USE_CUDA=1 mpiexec -np 8 --mca orte_base_help_aggregate 0 --host Tegra1,Tegra2,Tegra3,Tegra4,Tegra5,Tegra6,Tegra7,Tegra8 ./jacobi_cuda_aware_mpi -t 4 2
+
+19. Change the permissions of a file
+	chmod 755 Jacobi/
+
+20. Change the owner and the group user of a file (recursively inside the file)
+	sudo chown -R ubuntu:ubuntu Jacobi/
+
+21. List a file contents (like .deb)
+	ar t cuda-repo-l4t-8-0-local_8.0.34-1_arm64.deb
+
+22. Take a file contents
+	ar p cuda-Tegra-Copy.deb control.tar.gz | tar xvzf
+
+23. Size of multiple files inside the folder, in readable format
+	du -bsh *
+
+24. Copy all the files inside the folder (except the folder)
+	cp -r ~/nixpkgs/pkgs/misc/OpenMPI3/*
+
+25. Copy multiples foldes in 1 command line
+	cp -r ~/nixpkgs/pkgs/misc/{OpenMPI3,jacobi-bench} ~/cloud/BackupNix/
+
+26. Other command of which, located the executable command
+	type mpicc
+
+27. Reload /etc/fstab/
+	sudo mount -a
+
+28. NFS on Nix (Inside /etc/fstab)
+	MasterHosts:/home/carlos/cloud/nix /nix nfs nofail,x-systemd.device-timeout=4,local_lock=all 0 0
+
+29. Reload /etc/fstab
+	sudo mount -a

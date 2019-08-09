@@ -1,0 +1,28 @@
+NEXT STEPS:
+
+
+For the final part of the intership i propose the following jobs:
+
+1. Make a 2nd Benchmark
+
+2. Wrapped the 2 Benchmarks on Nix
+
+3. See how we can export a library in a easiest way on Nix.
+
+
+Week -> Actions
+
+1-2	Jacobi Benchmark (cuda)
+3-4	Libraries on Nix: Exporting this benchmarks on Nix
+5-6	It is possible to export a Nix Package more easy like Spack? (part1)
+	- The global creation of a Nix Package
+7-8	It is possible to export a Nix Package more easy like Spack? (part2)
+	- The association of the Nix Package creation elements
+9	Putting all together (writing the process)
+
+*I know that the week 6 and 7 is possible that nobody is here, so thats why this part is of lecture and split on 2 parts, but if you see is more or less a month of the research.
+
+
+# Otros links:
+
+https://nixos.wiki/wiki/Cheatsheet

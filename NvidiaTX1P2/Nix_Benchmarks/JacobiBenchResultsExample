@@ -1,0 +1,29 @@
+####################################
+## Ejemplos Prubeas Benchmark NIX
+####################################
+
+/----------------------------------------------------------------------------------------/
+
+/nix/store/8ykz5hxdn9k5ma4hvfajvkjcb1njcnbm-OpenMPI-3.2.1/bin/mpirun -np 1  /nix/store/gzpcawm9lnvzf4w2439f1v7hlpdvgkig-jacobibench/bin/jacobi_cuda_normal_mpi -t 1 1
+Topology size: 1 x 1
+Local domain size (current node): 4096 x 4096
+Global domain size (all nodes): 4096 x 4096
+Starting Jacobi run with 1 processes using "NVIDIA Tegra X1" GPUs (ECC enabled: 0 / 1):
+Iteration: 0 - Residue: 0.250000
+Iteration: 100 - Residue: 0.002397
+Iteration: 200 - Residue: 0.001204
+Iteration: 300 - Residue: 0.000804
+Iteration: 400 - Residue: 0.000603
+Iteration: 500 - Residue: 0.000483
+Iteration: 600 - Residue: 0.000402
+Iteration: 700 - Residue: 0.000345
+Iteration: 800 - Residue: 0.000302
+Iteration: 900 - Residue: 0.000269
+Stopped after 1000 iterations with residue 0.000242
+Total Jacobi run time: 38.1676 sec.
+Average per-process communication time: 0.0313 sec.
+Measured lattice updates: 439.14 MLU/s (total), 439.14 MLU/s (per process)
+Measured FLOPS: 2.20 GFLOPS (total), 2.20 GFLOPS (per process)
+Measured device bandwidth: 28.10 GB/s (total), 28.10 GB/s (per process)
+
+/----------------------------------------------------------------------------------------/
